@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>暗号、セキュリティの大切さについて</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f8ff;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2em;
+      color: #2e8b57;
+    }
+
+    #modeSelection, #quizArea, #endArea {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 320px;
+    }
+
+    button {
+      background-color: #2e8b57;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1em;
+      border-radius: 5px;
+      margin: 10px 0;
+      cursor: pointer;
+    }
+
+    button:hover:enabled {
+      background-color: #3cb371;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    #quiz {
+      font-size: 1.2em;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 5px 0;
+    }
+
+    #result {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    #score {
+      font-size: 1em;
+      margin-top: 10px;
+    }
+
+    #explanation {
+      font-size: 0.9em;
+      margin-top: 10px;
+      color: #555;
+    }
+
+    #nextBtn {
+      background-color: #ffa500;
+    }
+
+    #nextBtn:hover {
+      background-color: #ff7f00;
+    }
+  </style>
+</head>
+<body>
+
+<h1>暗号、セキュリティの大切さについて（ネットリテラシーを身に着よう）</h1>
+
+<div id="modeSelection">
+  <h3>クイズを選んでね</h3>
+  <button onclick="startGame('security')">セキュリティクイズ</button>
+  <button onclick="startGame('crypto')">暗号クイズ</button>
+   <p style="margin-top: 20px;">
+    <a href="https://docs.google.com/document/d/1ioW4mUcXoRcGVYneTY6SPLczbKg9t3VgvOaoFynu2Pg/edit?tab=t.yxtuyjeeke4v  ">
+      ドキュメント（Kaspersky）
+    </a>
+  </p>
+</div>
+
+<div id="quizArea" style="display:none;">
+  <div id="quiz"></div>
+  <img id="quizImage" src="" alt="画像" style="max-width: 100%; height: auto; margin: 10px 0; display: none;" />
+  <div id="choices"></div>
+<input type="text" id="textAnswer" placeholder="答えを入力" style="display:none; margin-top: 10px; padding: 5px; font-size: 1em;" />
+  <button id="submitBtn" onclick="checkAnswer()">送信</button>
+  <p id="result"></p>
+  <p id="score"></p>
+  <p id="explanation"></p>
+  <button id="nextBtn" onclick="nextQuestion()" style="display:none;">次へ</button>
+</div>
+
+<div id="endArea" style="display:none;">
+  <h3>クイズ終了！</h3>
+  <p id="finalScore"></p>
+  <button onclick="restartGame()">再挑戦</button>
+  <button onclick="goToModeSelection()">モード選択に戻る</button>
+  <p style="margin-top: 20px;">
+    <a href="https://www.nisc.go.jp/security-site/" target="_blank" style="color: #2e8b57;">
+      情報セキュリティ啓発サイト（NISC）
+    </a>
+  </p>
+</div>
+
+<script>
+  const quizzes = {
+    security: [
+      {
+        question: "情報セキュリティの3要素を漢字で入力！",
+        answers: ["機密性", "完全性", "可用性"],
+        options: ["機密性", "完全性", "可用性"],
+        explanation: {
+          "機密性": "情報の漏洩を防ぐための要素。",
+          "完全性": "情報の正確性を保つための要素。",
+          "可用性": "情報にいつでもアクセスできることが保証される要素。"
+        }
+      },
+      {
+        question: "「1234」「0000」など簡単な暗証番号は安全？",
+        answers: ["いいえ"],
+        options: ["はい", "いいえ", "気にしない"],
+        explanation: {
+          "いいえ": "簡単な暗証番号は予測されやすく、危険です。"
+        },
+        image: "images/konnsome.png"
+      },
+      {
+        question: "SNSで知らない人に個人情報を送っても大丈夫？",
+        answers: ["いいえ"],
+        options: ["はい", "いいえ", "送ってもバレない"],
+        explanation: {
+          "いいえ": "知らない人に個人情報を送るのは危険です。"
+        }
+      }
+    ],
+    crypto: [
+      {
+        question: "暗号の目的は何ですか？",
+        answers: ["情報を守るため"],
+        options: ["見た目を良くする", "情報を守るため", "手紙を早く送るため"],
+        explanation: {
+          "情報を守るため": "暗号は情報を他人に読まれないようにするための技術です。"
+        }
+      }
+    ]
+  };
+
+  let selectedQuiz = [];
+  let current = 0;
+  let score = 0;
+
+  const quizDiv = document.getElementById("quiz");
+  const choicesDiv = document.getElementById("choices");
+  const resultP = document.getElementById("result");
+  const scoreP = document.getElementById("score");
+  const explanationP = document.getElementById("explanation");
+  const nextBtn = document.getElementById("nextBtn");
+  const submitBtn = document.getElementById("submitBtn");
+  const quizImage = document.getElementById("quizImage");
+  const modeSelectionDiv = document.getElementById("modeSelection");
+  const quizAreaDiv = document.getElementById("quizArea");
+  const endAreaDiv = document.getElementById("endArea");
+
+  function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+
+  function startGame(mode) {
+    score = 0;
+    current = 0;
+    selectedQuiz = [...quizzes[mode]];
+    shuffleArray(selectedQuiz);
+    modeSelectionDiv.style.display = 'none';
+    quizAreaDiv.style.display = 'block';
+    endAreaDiv.style.display = 'none';
+    showQuestion();
+  }
+
+  function restartGame() {
+    startGame(selectedQuiz === quizzes.security ? 'security' : 'crypto');
+  }
+
+  function showQuestion() {
+    resultP.textContent = "";
+    explanationP.textContent = "";
+    nextBtn.style.display = "none";
+    submitBtn.disabled = false;
+
+    if (current < selectedQuiz.length) {
+      const q = selectedQuiz[current];
+      quizDiv.textContent = `問題 ${current + 1}: ${q.question}`;
+      choicesDiv.innerHTML = "";
+
+      if (q.image) {
+        quizImage.src = q.image;
+        quizImage.style.display = "block";
+      } else {
+        quizImage.style.display = "none";
+      }
+
+      const options = [...q.options];
+      shuffleArray(options);
+
+      options.forEach(opt => {
+        const label = document.createElement("label");
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "choice";
+        radio.value = opt;
+        label.appendChild(radio);
+        label.appendChild(document.createTextNode(opt));
+        choicesDiv.appendChild(label);
+      });
+    } else {
+      quizAreaDiv.style.display = "none";
+      endAreaDiv.style.display = "block";
+      document.getElementById("finalScore").textContent = `あなたの正解数は ${score} / ${selectedQuiz.length} です。`;
+    }
+  }
+
+  function normalizeAnswer(ans) {
+    return ans.trim().toLowerCase();
+  }
+
+  function checkAnswer() {
+    const q = selectedQuiz[current];
+    const radios = document.getElementsByName("choice");
+    let selected = "";
+    for (const r of radios) {
+      if (r.checked) {
+        selected = r.value;
+        break;
+      }
+    }
+
+    if (!selected) {
+      alert("選択肢を選んでください");
+      return;
+    }
+
+    const isCorrect = q.answers.some(ans => normalizeAnswer(ans) === normalizeAnswer(selected));
+    resultP.textContent = isCorrect ? "正解！" : `不正解。正解は「${q.answers.join(" / ")}」`;
+    score += isCorrect ? 1 : 0;
+
+    const explanation = q.explanation[selected] || q.explanation[q.answers[0]];
+    explanationP.textContent = "解説: " + explanation;
+    scoreP.textContent = `現在のスコア: ${score}`;
+    submitBtn.disabled = true;
+    nextBtn.style.display = "inline";
+  }
+
+  function nextQuestion() {
+    current++;
+    showQuestion();
+  }
+
+  function goToModeSelection() {
+    score = 0;
+    current = 0;
+    scoreP.textContent = "";
+    quizAreaDiv.style.display = 'none';
+    endAreaDiv.style.display = 'none';
+    modeSelectionDiv.style.display = 'block';
+    submitBtn.style.display = 'inline';
+  }
+</script>
+
+</body>
+</html>
