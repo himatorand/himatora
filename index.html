@@ -90,6 +90,14 @@
     #nextBtn:hover {
       background-color: #ff7f00;
     }
+
+    #textAnswer {
+      margin: 10px 0;
+      font-size: 1em;
+      padding: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -100,8 +108,8 @@
   <h3>クイズを選んでね</h3>
   <button onclick="startGame('security')">セキュリティクイズ</button>
   <button onclick="startGame('crypto')">暗号クイズ</button>
-   <p style="margin-top: 20px;">
-    <a href="https://docs.google.com/document/d/1ioW4mUcXoRcGVYneTY6SPLczbKg9t3VgvOaoFynu2Pg/edit?tab=t.yxtuyjeeke4v  ">
+  <p style="margin-top: 20px;">
+    <a href="https://docs.google.com/document/d/1ioW4mUcXoRcGVYneTY6SPLczbKg9t3VgvOaoFynu2Pg/edit?tab=t.jlfhu9z6xc5e">
       ドキュメント（Kaspersky）
     </a>
   </p>
@@ -111,7 +119,7 @@
   <div id="quiz"></div>
   <img id="quizImage" src="" alt="画像" style="max-width: 100%; height: auto; margin: 10px 0; display: none;" />
   <div id="choices"></div>
-<input type="text" id="textAnswer" placeholder="答えを入力" style="display:none; margin-top: 10px; padding: 5px; font-size: 1em;" />
+  <input type="text" id="textAnswer" placeholder="ここに入力" style="display: none;" />
   <button id="submitBtn" onclick="checkAnswer()">送信</button>
   <p id="result"></p>
   <p id="score"></p>
@@ -135,7 +143,7 @@
   const quizzes = {
     security: [
       {
-        question: "情報セキュリティの3要素を漢字で入力！",
+        question: "情報セキュリティの3要素",
         answers: ["機密性", "完全性", "可用性"],
         options: ["機密性", "完全性", "可用性"],
         explanation: {
@@ -166,7 +174,7 @@
       {
         question: "暗号の目的は何ですか？",
         answers: ["情報を守るため"],
-        options: ["見た目を良くする", "情報を守るため", "手紙を早く送るため"],
+        options: [],
         explanation: {
           "情報を守るため": "暗号は情報を他人に読まれないようにするための技術です。"
         }
@@ -175,11 +183,13 @@
   };
 
   let selectedQuiz = [];
+  let selectedMode = "";
   let current = 0;
   let score = 0;
 
   const quizDiv = document.getElementById("quiz");
   const choicesDiv = document.getElementById("choices");
+  const textAnswer = document.getElementById("textAnswer");
   const resultP = document.getElementById("result");
   const scoreP = document.getElementById("score");
   const explanationP = document.getElementById("explanation");
@@ -198,6 +208,7 @@
   }
 
   function startGame(mode) {
+    selectedMode = mode;
     score = 0;
     current = 0;
     selectedQuiz = [...quizzes[mode]];
@@ -209,7 +220,7 @@
   }
 
   function restartGame() {
-    startGame(selectedQuiz === quizzes.security ? 'security' : 'crypto');
+    startGame(selectedMode);
   }
 
   function showQuestion() {
@@ -217,11 +228,12 @@
     explanationP.textContent = "";
     nextBtn.style.display = "none";
     submitBtn.disabled = false;
+    textAnswer.value = ""; // 入力欄クリア
+    choicesDiv.innerHTML = ""; // 選択肢クリア
 
     if (current < selectedQuiz.length) {
       const q = selectedQuiz[current];
       quizDiv.textContent = `問題 ${current + 1}: ${q.question}`;
-      choicesDiv.innerHTML = "";
 
       if (q.image) {
         quizImage.src = q.image;
@@ -230,19 +242,23 @@
         quizImage.style.display = "none";
       }
 
-      const options = [...q.options];
-      shuffleArray(options);
-
-      options.forEach(opt => {
-        const label = document.createElement("label");
-        const radio = document.createElement("input");
-        radio.type = "radio";
-        radio.name = "choice";
-        radio.value = opt;
-        label.appendChild(radio);
-        label.appendChild(document.createTextNode(opt));
-        choicesDiv.appendChild(label);
-      });
+      if (selectedMode === "crypto") {
+        textAnswer.style.display = "block";
+      } else {
+        textAnswer.style.display = "none";
+        const options = [...q.options];
+        shuffleArray(options);
+        options.forEach(opt => {
+          const label = document.createElement("label");
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = "choice";
+          radio.value = opt;
+          label.appendChild(radio);
+          label.appendChild(document.createTextNode(opt));
+          choicesDiv.appendChild(label);
+        });
+      }
     } else {
       quizAreaDiv.style.display = "none";
       endAreaDiv.style.display = "block";
@@ -256,17 +272,22 @@
 
   function checkAnswer() {
     const q = selectedQuiz[current];
-    const radios = document.getElementsByName("choice");
     let selected = "";
-    for (const r of radios) {
-      if (r.checked) {
-        selected = r.value;
-        break;
+
+    if (selectedMode === "crypto") {
+      selected = textAnswer.value;
+    } else {
+      const radios = document.getElementsByName("choice");
+      for (const r of radios) {
+        if (r.checked) {
+          selected = r.value;
+          break;
+        }
       }
     }
 
     if (!selected) {
-      alert("選択肢を選んでください");
+      alert("答えを入力または選んでください");
       return;
     }
 
